@@ -39,6 +39,11 @@ function updateNavUI(view) {
 function renderHome() {
   mainContent.innerHTML = `
     <h2 class="section-title">Welcome to the Virtual Museum</h2>
+    <div id="home-featured" style="text-align: center; margin-top: 2rem;">
+      <img src="/sunflowers.jpg" alt="Sunflowers" style="max-width: 100%; max-height: 500px; border-radius: 8px; box-shadow: 0 8px 20px rgba(0,0,0,0.5);">
+      <h3 style="margin-top: 1.5rem; color: #fff;">Sunflowers</h3>
+      <p style="color: #b5a8c2; font-size: 1.1rem;">Vincent van Gogh</p>
+    </div>
   `;
 }
 

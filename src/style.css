@@ -112,7 +112,7 @@ nav ul {
   text-align: center;
   padding: 2rem 0;
   margin-top: auto;
-  color: #b5a8c2; /* Lightened up for the dark background! */
+  color: #b5a8c2; 
   font-size: 0.9rem;
 }
 
@@ -140,7 +140,23 @@ body {
 }
 
 .main-footer a {
-  color: #c996ff; /* A bright, readable purple that matches your theme */
-  text-decoration: none; /* Removes the underline */
+  color: #c996ff;
+  text-decoration: none;
   font-weight: bold;
+}
+
+.department-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100px;
+  padding: 1.5rem;
+  text-align: center;
+  background: linear-gradient(135deg, #3e2d59 0%, #2a1f3d 100%);
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out;
+}
+
+.department-card:hover {
+  transform: scale(1.05);
 }

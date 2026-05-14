@@ -3,7 +3,12 @@ import './style.css';
 const mainContent = document.getElementById('main-content');
 const navHome = document.getElementById('nav-home');
 const navGallery = document.getElementById('nav-gallery');
-const navArtists = document.getElementById('nav-artists');
+const navDepartments = document.getElementById('nav-departments');
+
+const API_BASE_URL = 'https://collectionapi.metmuseum.org/public/collection/v1';
+const endpoint1_search = `${API_BASE_URL}/search`;
+const endpoint2_objects = `${API_BASE_URL}/objects`;
+const endpoint3_departments = `${API_BASE_URL}/departments`;
 
 document.addEventListener('DOMContentLoaded', () => {
   window.location.hash = '#home';
@@ -21,19 +26,19 @@ function handleRouting() {
     renderHome();
   } else if (view === 'gallery') {
     renderGallery();
-  } else if (view === 'artists') {
-    renderArtists();
+  } else if (view === 'departments') {
+    renderDeprtments();
   }
 }
 
 function updateNavUI(view) {
   navHome.classList.remove('active');
   navGallery.classList.remove('active');
-  navArtists.classList.remove('active');
+  navDepartments.classList.remove('active');
 
   if (view === 'home') navHome.classList.add('active');
   if (view === 'gallery') navGallery.classList.add('active');
-  if (view === 'artists') navArtists.classList.add('active');
+  if (view === 'departments') navDepartments.classList.add('active');
 }
 
 function renderHome() {
@@ -87,9 +92,7 @@ async function renderGallery(query = '') {
   statusContainer.innerHTML = `Searching for "${query}"...`;
 
   try {
-    const searchRes = await fetch(
-      `https://collectionapi.metmuseum.org/public/collection/v1/search?hasImages=true&q=${query}`
-    );
+    const searchRes = await fetch(`${endpoint1_search}?hasImages=true&q=${query}`);
     const searchData = await searchRes.json();
     console.log('searchData: ', searchData);
 
@@ -107,9 +110,7 @@ async function renderGallery(query = '') {
     for (let i = 0; i < searchData.objectIDs.length && validCount < TARGET_COUNT; i += 4) {
       const batchIds = searchData.objectIDs.slice(i, i + 4);
       const requests = batchIds.map((id) =>
-        fetch(`https://collectionapi.metmuseum.org/public/collection/v1/objects/${id}`).then(
-          (res) => res.json()
-        )
+        fetch(`${endpoint2_objects}/${id}`).then((res) => res.json())
       );
 
       const artResults = await Promise.all(requests);
@@ -148,11 +149,36 @@ async function renderGallery(query = '') {
   }
 }
 
-async function renderArtists() {
+async function renderDeprtments() {
   mainContent.innerHTML = `
-    <h2 class="section-title">Artists</h2>
-    <div class="grid" id="artist-grid">
-      <p>Fetching artists data from Art API</p>
+    <h2 class="section-title">Museum Departments</h2>
+    
+    <div id="status-container" style="text-align: center; margin-bottom: 2rem; color: #cbbcdbff;">
+      Loading departments...
     </div>
+    
+    <div class="grid" id="departments-grid"></div>
   `;
+
+  const departmentsGrid = document.getElementById('departments-grid');
+  const statusContainer = document.getElementById('status-container');
+
+  try {
+    const res = await fetch(endpoint3_departments);
+    const data = await res.json();
+
+    statusContainer.innerHTML = '';
+
+    data.departments.forEach((dept) => {
+      const card = document.createElement('div');
+      card.className = 'art-card department-card';
+
+      card.innerHTML = `<h3 style="margin:0;">${dept.displayName}</h3>`;
+
+      departmentsGrid.appendChild(card);
+    });
+  } catch (error) {
+    console.error('API Error:', error);
+    statusContainer.innerHTML = 'Failed to load departments from the Met API.';
+  }
 }

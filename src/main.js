@@ -152,28 +152,57 @@ async function renderGallery(query = '') {
 async function renderDeprtments() {
   mainContent.innerHTML = `
     <h2 class="section-title">Museum Departments</h2>
+    <p style="text-align: center; color: #b5a8c2; margin-bottom: 2rem;">Click a department to discover a random artwork!</p>
     
     <div id="status-container" style="text-align: center; margin-bottom: 2rem; color: #cbbcdbff;">
       Loading departments...
     </div>
     
     <div class="grid" id="departments-grid"></div>
+
+    <div id="art-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center;">
+      <div style="background: #2a1f3d; padding: 20px; border-radius: 8px; max-width: 600px; width: 90%; text-align: center; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <button id="close-modal" style="position: absolute; top: 10px; right: 15px; background: none; border: none; color: white; font-size: 2rem; cursor: pointer;">&times;</button>
+        <h3 id="modal-title" style="margin-top: 10px; color: #fff;">Loading...</h3>
+        
+        <div id="modal-image-container" style="margin: 20px 0; min-height: 200px; display: flex; justify-content: center; align-items: center; color: #cbbcdbff;">
+            <p>Searching the archives...</p>
+        </div>
+        
+        <p id="modal-department" style="color: #b5a8c2; font-weight: bold;"></p>
+        <p id="modal-date" style="color: #887a99; font-size: 0.9rem;"></p>
+      </div>
+    </div>
   `;
 
   const departmentsGrid = document.getElementById('departments-grid');
   const statusContainer = document.getElementById('status-container');
+  const modal = document.getElementById('art-modal');
+  const closeModal = document.getElementById('close-modal');
+
+  closeModal.addEventListener('click', () => {
+    modal.style.display = 'none';
+  });
 
   try {
     const res = await fetch(endpoint3_departments);
     const data = await res.json();
 
+    console.log('data: ', data);
+
     statusContainer.innerHTML = '';
 
     data.departments.forEach((dept) => {
+      console.log('dept: ', dept);
+
       const card = document.createElement('div');
       card.className = 'art-card department-card';
 
       card.innerHTML = `<h3 style="margin:0;">${dept.displayName}</h3>`;
+
+      card.addEventListener('click', () => {
+        openRandomArtModal(dept.departmentId, dept.displayName);
+      });
 
       departmentsGrid.appendChild(card);
     });
@@ -181,4 +210,19 @@ async function renderDeprtments() {
     console.error('API Error:', error);
     statusContainer.innerHTML = 'Failed to load departments from the Met API.';
   }
+}
+
+async function openRandomArtModal(departmentId, departmentName) {
+  const modal = document.getElementById('art-modal');
+  const modalTitle = document.getElementById('modal-title');
+  const modalImageContainer = document.getElementById('modal-image-container');
+  const modalDepartment = document.getElementById('modal-department');
+
+  modalTitle.innerText = `Exploring "${departmentName}"...`;
+
+  modalImageContainer.innerHTML = '<p>Image will be here</p>';
+
+  modalDepartment.innerText = `Department ID: ${departmentId}`;
+
+  modal.style.display = 'flex';
 }

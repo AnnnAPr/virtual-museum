@@ -61,6 +61,16 @@ async function renderGallery(query = '') {
     if (newQuery) renderGallery(newQuery);
   });
 
+  document.getElementById('search-input').addEventListener('keypress', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      
+      const newQuery = document.getElementById('search-input').value;
+      if (newQuery) renderGallery(newQuery);
+    }
+  });
+
+
   const artworkGrid = document.getElementById('artwork-grid');
 
   try {

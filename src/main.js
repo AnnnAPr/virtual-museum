@@ -184,6 +184,10 @@ async function renderDeprtments() {
     modal.style.display = 'none';
   });
 
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.style.display = 'none';
+  });
+
   try {
     const res = await fetch(endpoint3_departments);
     const data = await res.json();
@@ -218,7 +222,7 @@ async function openRandomArtModal(departmentId, departmentName) {
   const modalImageContainer = document.getElementById('modal-image-container');
   const modalDepartment = document.getElementById('modal-department');
 
-  modalTitle.innerText = `Exploring "${departmentName}"...`;
+  modalTitle.innerText = `Exploring "${departmentName}"`;
 
   modalImageContainer.innerHTML = '<p>Image will be here</p>';
 

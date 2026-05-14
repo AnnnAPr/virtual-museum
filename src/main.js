@@ -1,6 +1,7 @@
 import './style.css'
 
 const mainContent = document.getElementById('main-content');
+const navHome = document.getElementById('nav-home');
 const navGallery = document.getElementById('nav-gallery');
 const navArtists = document.getElementById('nav-artists');
 
@@ -10,12 +11,14 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function handleRouting() {
-  const hash = window.location.hash || '#gallery';
+  const hash = window.location.hash || '#home';
   const view = hash.replace('#', '');
   
   updateNavUI(view);
-  
-  if (view === 'gallery') {
+
+  if (view === 'home') {
+    renderHome();
+  } else if (view === 'gallery') {
     renderGallery();
   } else if (view === 'artists') {
     renderArtists();
@@ -23,24 +26,103 @@ function handleRouting() {
 }
 
 function updateNavUI(view) {
+  navHome.classList.remove('active');
   navGallery.classList.remove('active');
   navArtists.classList.remove('active');
   
+  if (view === 'home') navHome.classList.add('active');
   if (view === 'gallery') navGallery.classList.add('active');
   if (view === 'artists') navArtists.classList.add('active');
 }
 
-async function renderGallery() {
-  mainContent.innerHTML = `
-    <h2 class="section-title">Gallery</h2>
-    <div class="grid" id="artwork-grid">
-      <p>Fetching artworks from the Art API</p>
-    </div>
+function renderHome() {
+  mainContent.innerHTML = 
+  `
+    <h2 class="section-title">Welcome to the Virtual Museum</h2>
   `;
 }
 
+async function renderGallery(query = '') {
+  mainContent.innerHTML =
+  `
+    <h2 class="section-title">The Art Gallery</h2>
+    
+    <div class="search-container">
+      <input type="text" id="search-input" placeholder="Search for art (e.g. cats, gold, sunflowers)..." value="${query}">
+      <button id="search-button">Search</button>
+    </div>
+    <div class="grid" id="artwork-grid">
+      <p class="status-msg">Searching for "${query}"...</p>
+    </div>
+  `;
+
+  document.getElementById('search-button').addEventListener('click', () => {
+    const newQuery = document.getElementById('search-input').value;
+    if (newQuery) renderGallery(newQuery);
+  });
+
+  const artworkGrid = document.getElementById('artwork-grid');
+
+  try {
+    const searchRes = await fetch(`https://collectionapi.metmuseum.org/public/collection/v1/search?hasImages=true&q=${query}`);
+    const searchData = await searchRes.json();
+    console.log('searchData: ', searchData)
+    
+    if (!searchData.objectIDs || searchData.objectIDs.length === 0) {
+      artworkGrid.innerHTML = `<p class="status-msg">No results found for "${query}".</p>`;
+      return;
+    }
+
+    artworkGrid.innerHTML = ''; 
+
+    const TARGET_COUNT = 12;
+    let validCount = 0;
+    
+    // retrieve by small 4 batches
+    for (let i = 0; i < searchData.objectIDs.length && validCount < TARGET_COUNT; i += 4) {
+      const batchIds = searchData.objectIDs.slice(i, i + 4);
+      const requests = batchIds.map(id => 
+        fetch(`https://collectionapi.metmuseum.org/public/collection/v1/objects/${id}`).then(res => res.json())
+      );
+      
+      const artResults = await Promise.all(requests);
+      
+      for (const art of artResults) {
+        if (validCount >= TARGET_COUNT) break;
+        
+        if (art.primaryImageSmall) {
+          const card = document.createElement('div');
+          card.className = 'art-card';
+          card.innerHTML = `
+            <div class="art-image">
+              <img src="${art.primaryImageSmall}" alt="${art.title}" loading="lazy">
+            </div>
+            <div class="art-info">
+              <h3>${art.title}</h3>
+              <p>${art.artistDisplayName}</p>
+              <p class="art-date">${art.objectDate}</p>
+            </div>
+          `;
+          artworkGrid.appendChild(card);
+          validCount++;
+        }
+      }
+    }
+
+    if (validCount === 0) {
+      artworkGrid.innerHTML = `<p class="status-msg">No images found for "${query}".</p>`;
+    }
+
+  } catch (error) {
+    console.error('API Error:', error);
+    artworkGrid.innerHTML = `<p class="error">Failed to load The Art collection. Please try again.</p>`;
+  }
+}
+
+
 async function renderArtists() {
-  mainContent.innerHTML = `
+  mainContent.innerHTML = 
+  `
     <h2 class="section-title">Artists</h2>
     <div class="grid" id="artist-grid">
       <p>Fetching artists data from Art API</p>

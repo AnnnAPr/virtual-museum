@@ -1,4 +1,4 @@
-import './style.css'
+import './style.css';
 
 const mainContent = document.getElementById('main-content');
 const navHome = document.getElementById('nav-home');
@@ -6,6 +6,7 @@ const navGallery = document.getElementById('nav-gallery');
 const navArtists = document.getElementById('nav-artists');
 
 document.addEventListener('DOMContentLoaded', () => {
+  window.location.hash = '#home';
   handleRouting();
   window.addEventListener('hashchange', handleRouting);
 });
@@ -13,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function handleRouting() {
   const hash = window.location.hash || '#home';
   const view = hash.replace('#', '');
-  
+
   updateNavUI(view);
 
   if (view === 'home') {
@@ -29,30 +30,30 @@ function updateNavUI(view) {
   navHome.classList.remove('active');
   navGallery.classList.remove('active');
   navArtists.classList.remove('active');
-  
+
   if (view === 'home') navHome.classList.add('active');
   if (view === 'gallery') navGallery.classList.add('active');
   if (view === 'artists') navArtists.classList.add('active');
 }
 
 function renderHome() {
-  mainContent.innerHTML = 
-  `
+  mainContent.innerHTML = `
     <h2 class="section-title">Welcome to the Virtual Museum</h2>
   `;
 }
 
 async function renderGallery(query = '') {
-  mainContent.innerHTML =
-  `
+  mainContent.innerHTML = `
     <h2 class="section-title">The Art Gallery</h2>
     
     <div class="search-container">
       <input type="text" id="search-input" placeholder="Search for art (e.g. cats, gold, sunflowers)..." value="${query}">
       <button id="search-button">Search</button>
     </div>
+    <div id="status-container" style="text-align: center; margin-bottom: 2rem; color: #cbbcdbff;">
+    </div>
+
     <div class="grid" id="artwork-grid">
-      <p class="status-msg">Searching for "${query}"...</p>
     </div>
   `;
 
@@ -64,42 +65,54 @@ async function renderGallery(query = '') {
   document.getElementById('search-input').addEventListener('keypress', (event) => {
     if (event.key === 'Enter') {
       event.preventDefault();
-      
+
       const newQuery = document.getElementById('search-input').value;
       if (newQuery) renderGallery(newQuery);
     }
   });
 
-
   const artworkGrid = document.getElementById('artwork-grid');
+  const statusContainer = document.getElementById('status-container');
+
+  if (!query) {
+    statusContainer.innerHTML = `Enter a search term above to find art!`;
+    return;
+  }
+
+  statusContainer.innerHTML = `Searching for "${query}"...`;
 
   try {
-    const searchRes = await fetch(`https://collectionapi.metmuseum.org/public/collection/v1/search?hasImages=true&q=${query}`);
+    const searchRes = await fetch(
+      `https://collectionapi.metmuseum.org/public/collection/v1/search?hasImages=true&q=${query}`
+    );
     const searchData = await searchRes.json();
-    console.log('searchData: ', searchData)
-    
+    console.log('searchData: ', searchData);
+
     if (!searchData.objectIDs || searchData.objectIDs.length === 0) {
       artworkGrid.innerHTML = `<p class="status-msg">No results found for "${query}".</p>`;
       return;
     }
 
-    artworkGrid.innerHTML = ''; 
+    artworkGrid.innerHTML = '';
 
     const TARGET_COUNT = 12;
     let validCount = 0;
-    
+
     // retrieve by small 4 batches
     for (let i = 0; i < searchData.objectIDs.length && validCount < TARGET_COUNT; i += 4) {
       const batchIds = searchData.objectIDs.slice(i, i + 4);
-      const requests = batchIds.map(id => 
-        fetch(`https://collectionapi.metmuseum.org/public/collection/v1/objects/${id}`).then(res => res.json())
+      const requests = batchIds.map((id) =>
+        fetch(`https://collectionapi.metmuseum.org/public/collection/v1/objects/${id}`).then(
+          (res) => res.json()
+        )
       );
-      
+
       const artResults = await Promise.all(requests);
-      
+      console.log('artResults: ', artResults);
+
       for (const art of artResults) {
         if (validCount >= TARGET_COUNT) break;
-        
+
         if (art.primaryImageSmall) {
           const card = document.createElement('div');
           card.className = 'art-card';
@@ -120,19 +133,18 @@ async function renderGallery(query = '') {
     }
 
     if (validCount === 0) {
-      artworkGrid.innerHTML = `<p class="status-msg">No images found for "${query}".</p>`;
+      statusContainer.innerHTML = `No images found for "${query}".`;
+    } else {
+      statusContainer.innerHTML = '';
     }
-
   } catch (error) {
     console.error('API Error:', error);
     artworkGrid.innerHTML = `<p class="error">Failed to load The Art collection. Please try again.</p>`;
   }
 }
 
-
 async function renderArtists() {
-  mainContent.innerHTML = 
-  `
+  mainContent.innerHTML = `
     <h2 class="section-title">Artists</h2>
     <div class="grid" id="artist-grid">
       <p>Fetching artists data from Art API</p>

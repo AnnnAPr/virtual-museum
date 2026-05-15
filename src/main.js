@@ -44,10 +44,10 @@ function updateNavUI(view) {
 function renderHome() {
   mainContent.innerHTML = `
     <h2 class="section-title">Welcome to the Virtual Museum</h2>
-    <div id="home-featured" style="text-align: center; margin-top: 2rem;">
-      <img src="/sunflowers.jpg" alt="Sunflowers" style="max-width: 100%; max-height: 500px; border-radius: 8px; box-shadow: 0 8px 20px rgba(0,0,0,0.5);">
-      <h3 style="margin-top: 1.5rem; color: #fff;">Sunflowers</h3>
-      <p style="color: #b5a8c2; font-size: 1.1rem;">Vincent van Gogh</p>
+    <div id="home-featured">
+      <img src="/sunflowers.jpg" alt="Sunflowers" class="home-img">
+      <h3 class="home-title">Sunflowers</h3>
+      <p class="home-artist">Vincent van Gogh</p>
     </div>
   `;
 }
@@ -72,7 +72,7 @@ async function renderGallery(query = '') {
       </div>
       <button id="search-button">Search</button>
     </div>
-    <div id="status-container" style="text-align: center; margin-bottom: 2rem; color: #cbbcdbff;">
+    <div id="status-container">
     </div>
 
     <div class="grid" id="artwork-grid">
@@ -190,23 +190,23 @@ async function renderGallery(query = '') {
 async function renderDeprtments() {
   mainContent.innerHTML = `
     <h2 class="section-title">Museum Departments</h2>
-    <p style="text-align: center; color: #b5a8c2; margin-bottom: 2rem;">Click a department to discover a random artwork!</p>
+    <p class="page-subtitle">Click a department to discover a random artwork!</p>
     
-    <div id="status-container" style="text-align: center; margin-bottom: 2rem; color: #cbbcdbff;">
+    <div id="status-container">
       Loading departments...
     </div>
     
     <div class="grid" id="departments-grid"></div>
 
-    <div id="art-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center;">
-      <div style="background: #2a1f3d; padding: 20px; border-radius: 8px; max-width: 600px; width: 90%; text-align: center; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-        <button id="close-modal" style="position: absolute; top: 10px; right: 15px; background: none; border: none; color: white; font-size: 2rem; cursor: pointer;">&times;</button>
-        <h3 id="modal-title" style="margin-top: 10px; color: #fff;">Loading...</h3>
+    <div id="art-modal">
+      <div class="modal-content">
+        <button id="close-modal">&times;</button>
+        <h3 id="modal-title">Loading...</h3>
         
-        <div id="modal-image-container" style="margin: 20px 0; min-height: 200px; display: flex; justify-content: center; align-items: center; color: #cbbcdbff;">
+        <div id="modal-image-container">
         </div>
         
-        <p id="modal-department" style="color: #b5a8c2; font-weight: bold;"></p>
+        <p id="modal-department"></p>
       </div>
     </div>
   `;
@@ -238,7 +238,7 @@ async function renderDeprtments() {
       const card = document.createElement('div');
       card.className = 'art-card department-card';
 
-      card.innerHTML = `<h3 style="margin:0;">${escapeHtml(dept.displayName)}</h3>`;
+      card.innerHTML = `<h3>${escapeHtml(dept.displayName)}</h3>`;
 
       card.addEventListener('click', () => {
         openRandomArtModal(dept.departmentId, dept.displayName);
@@ -282,7 +282,7 @@ async function openRandomArtModal(departmentId, departmentName) {
 
     if (artData && artData.primaryImageSmall) {
       modalTitle.innerText = artData.title;
-      modalImageContainer.innerHTML = `<img src="${escapeHtml(artData.primaryImageSmall)}" alt="${escapeHtml(artData.title)}" style="max-width: 100%; max-height: 50vh; border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">`;
+      modalImageContainer.innerHTML = `<img src="${escapeHtml(artData.primaryImageSmall)}" alt="${escapeHtml(artData.title)}" class="modal-img">`;
 
       const artistText = artData.artistDisplayName
         ? `By: ${artData.artistDisplayName}`
@@ -290,7 +290,7 @@ async function openRandomArtModal(departmentId, departmentName) {
       modalDepartment.innerText = artistText;
     } else {
       modalTitle.innerText = 'Artworks from this department are currently unavailable.';
-      modalImageContainer.innerHTML = `<img src="/sunflowers.jpg" alt="Default Sunflowers" style="max-width: 100%; max-height: 50vh; border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">`;
+      modalImageContainer.innerHTML = `<img src="/sunflowers.jpg" alt="Default Sunflowers" class="modal-img">`;
       modalDepartment.innerText = "Please enjoy Van Gogh's classic Sunflowers instead!";
     }
   } catch (error) {

@@ -1,14 +1,12 @@
 import './style.css';
+import { searchArtworks, fetchObject } from './api/metApi.js';
+import { escapeHtml } from './utils/helpers.js';
+import { renderDepartments } from './pages/departments.js';
 
 const mainContent = document.getElementById('main-content');
 const navHome = document.getElementById('nav-home');
 const navGallery = document.getElementById('nav-gallery');
 const navDepartments = document.getElementById('nav-departments');
-
-const API_BASE_URL = 'https://collectionapi.metmuseum.org/public/collection/v1';
-const endpoint1_search = `${API_BASE_URL}/search`;
-const endpoint2_objects = `${API_BASE_URL}/objects`;
-const endpoint3_departments = `${API_BASE_URL}/departments`;
 
 document.addEventListener('DOMContentLoaded', () => {
   window.location.hash = '#home';
@@ -27,7 +25,7 @@ function handleRouting() {
   } else if (view === 'gallery') {
     renderGallery();
   } else if (view === 'departments') {
-    renderDeprtments();
+    renderDepartments();
   }
 }
 
@@ -50,14 +48,6 @@ function renderHome() {
       <p class="home-artist">Vincent van Gogh</p>
     </div>
   `;
-}
-
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
 }
 
 async function renderGallery(query = '') {
@@ -87,7 +77,6 @@ async function renderGallery(query = '') {
   document.getElementById('search-input').addEventListener('keypress', (event) => {
     if (event.key === 'Enter') {
       event.preventDefault();
-
       const newQuery = document.getElementById('search-input').value;
       if (newQuery) renderGallery(newQuery);
     }
@@ -120,14 +109,7 @@ async function renderGallery(query = '') {
   statusContainer.innerHTML = `Searching for "${safeQuery}"...`;
 
   try {
-    const searchRes = await fetch(
-      `${endpoint1_search}?hasImages=true&q=${encodeURIComponent(query)}`
-    );
-    if (!searchRes.ok) {
-      throw new Error(`Search request failed with status ${searchRes.status}`);
-    }
-    const searchData = await searchRes.json();
-    console.log('searchData: ', searchData);
+    const searchData = await searchArtworks(query);
 
     if (!searchData.objectIDs || searchData.objectIDs.length === 0) {
       statusContainer.innerHTML = '';
@@ -140,19 +122,12 @@ async function renderGallery(query = '') {
     const TARGET_COUNT = 12;
     let validCount = 0;
 
-    // retrieve by small 4 batches; use allSettled so one bad ID never aborts the whole batch
     for (let i = 0; i < searchData.objectIDs.length && validCount < TARGET_COUNT; i += 4) {
       const batchIds = searchData.objectIDs.slice(i, i + 4);
-      const requests = batchIds.map((id) =>
-        fetch(`${endpoint2_objects}/${id}`).then((res) => {
-          if (!res.ok) throw new Error(`Object ${id} responded with ${res.status}`);
-          return res.json();
-        })
-      );
+      const requests = batchIds.map((id) => fetchObject(id));
 
       const settled = await Promise.allSettled(requests);
       const artResults = settled.filter((r) => r.status === 'fulfilled').map((r) => r.value);
-      console.log('artResults: ', artResults);
 
       for (const art of artResults) {
         if (validCount >= TARGET_COUNT) break;
@@ -184,117 +159,5 @@ async function renderGallery(query = '') {
   } catch (error) {
     console.error('API Error:', error);
     artworkGrid.innerHTML = `<p class="error">Failed to load The Art collection. Please try again.</p>`;
-  }
-}
-
-async function renderDeprtments() {
-  mainContent.innerHTML = `
-    <h2 class="section-title">Museum Departments</h2>
-    <p class="page-subtitle">Click a department to discover a random artwork!</p>
-    
-    <div id="status-container">
-      Loading departments...
-    </div>
-    
-    <div class="grid" id="departments-grid"></div>
-
-    <div id="art-modal">
-      <div class="modal-content">
-        <button id="close-modal">&times;</button>
-        <h3 id="modal-title">Loading...</h3>
-        
-        <div id="modal-image-container">
-        </div>
-        
-        <p id="modal-department"></p>
-      </div>
-    </div>
-  `;
-
-  const departmentsGrid = document.getElementById('departments-grid');
-  const statusContainer = document.getElementById('status-container');
-  const modal = document.getElementById('art-modal');
-  const closeModal = document.getElementById('close-modal');
-
-  closeModal.addEventListener('click', () => {
-    modal.style.display = 'none';
-  });
-
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) modal.style.display = 'none';
-  });
-
-  try {
-    const res = await fetch(endpoint3_departments);
-    const data = await res.json();
-
-    console.log('data: ', data);
-
-    statusContainer.innerHTML = '';
-
-    data.departments.forEach((dept) => {
-      console.log('dept: ', dept);
-
-      const card = document.createElement('div');
-      card.className = 'art-card department-card';
-
-      card.innerHTML = `<h3>${escapeHtml(dept.displayName)}</h3>`;
-
-      card.addEventListener('click', () => {
-        openRandomArtModal(dept.departmentId, dept.displayName);
-      });
-
-      departmentsGrid.appendChild(card);
-    });
-  } catch (error) {
-    console.error('API Error:', error);
-    statusContainer.innerHTML = 'Failed to load departments from the Met API.';
-  }
-}
-
-async function openRandomArtModal(departmentId, departmentName) {
-  const modal = document.getElementById('art-modal');
-  const modalTitle = document.getElementById('modal-title');
-  const modalImageContainer = document.getElementById('modal-image-container');
-  const modalDepartment = document.getElementById('modal-department');
-
-  modalTitle.innerText = `Exploring "${departmentName}"`;
-
-  modalImageContainer.innerHTML = '<div class="loader"></div>';
-
-  //   modalDepartment.innerText = `Department ID: ${departmentId}`;
-
-  modal.style.display = 'flex';
-
-  try {
-    const searchRes = await fetch(
-      `${endpoint1_search}?departmentId=${departmentId}&hasImages=true&q=art`
-    );
-    const searchData = await searchRes.json();
-    let artData = null;
-
-    if (searchData.objectIDs && searchData.objectIDs.length > 0) {
-      const randomIndex = Math.floor(Math.random() * searchData.objectIDs.length);
-      const randomId = searchData.objectIDs[randomIndex];
-      const artRes = await fetch(`${endpoint2_objects}/${randomId}`);
-      artData = await artRes.json();
-    }
-
-    if (artData && artData.primaryImageSmall) {
-      modalTitle.innerText = artData.title;
-      modalImageContainer.innerHTML = `<img src="${escapeHtml(artData.primaryImageSmall)}" alt="${escapeHtml(artData.title)}" class="modal-img">`;
-
-      const artistText = artData.artistDisplayName
-        ? `By: ${artData.artistDisplayName}`
-        : 'Unknown Artist';
-      modalDepartment.innerText = artistText;
-    } else {
-      modalTitle.innerText = 'Artworks from this department are currently unavailable.';
-      modalImageContainer.innerHTML = `<img src="/sunflowers.jpg" alt="Default Sunflowers" class="modal-img">`;
-      modalDepartment.innerText = "Please enjoy Van Gogh's classic Sunflowers instead!";
-    }
-  } catch (error) {
-    console.error(error);
-    modalImageContainer.innerHTML = '<p>Error loading artwork from the API.</p>';
   }
 }

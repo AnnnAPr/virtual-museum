@@ -166,11 +166,9 @@ async function renderDeprtments() {
         <h3 id="modal-title" style="margin-top: 10px; color: #fff;">Loading...</h3>
         
         <div id="modal-image-container" style="margin: 20px 0; min-height: 200px; display: flex; justify-content: center; align-items: center; color: #cbbcdbff;">
-            <p>Searching the archives...</p>
         </div>
         
         <p id="modal-department" style="color: #b5a8c2; font-weight: bold;"></p>
-        <p id="modal-date" style="color: #887a99; font-size: 0.9rem;"></p>
       </div>
     </div>
   `;
@@ -224,9 +222,41 @@ async function openRandomArtModal(departmentId, departmentName) {
 
   modalTitle.innerText = `Exploring "${departmentName}"`;
 
-  modalImageContainer.innerHTML = '<p>Image will be here</p>';
+  modalImageContainer.innerHTML = '<div class="loader"></div>';
 
-  modalDepartment.innerText = `Department ID: ${departmentId}`;
+  //   modalDepartment.innerText = `Department ID: ${departmentId}`;
 
   modal.style.display = 'flex';
+
+  try {
+    const searchRes = await fetch(
+      `${endpoint1_search}?departmentId=${departmentId}&hasImages=true&q=art`
+    );
+    const searchData = await searchRes.json();
+    let artData = null;
+
+    if (searchData.objectIDs && searchData.objectIDs.length > 0) {
+      const randomIndex = Math.floor(Math.random() * searchData.objectIDs.length);
+      const randomId = searchData.objectIDs[randomIndex];
+      const artRes = await fetch(`${endpoint2_objects}/${randomId}`);
+      artData = await artRes.json();
+    }
+
+    if (artData && artData.primaryImageSmall) {
+      modalTitle.innerText = artData.title;
+      modalImageContainer.innerHTML = `<img src="${artData.primaryImageSmall}" alt="${artData.title}" style="max-width: 100%; max-height: 50vh; border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">`;
+
+      const artistText = artData.artistDisplayName
+        ? `By: ${artData.artistDisplayName}`
+        : 'Unknown Artist';
+      modalDepartment.innerText = artistText;
+    } else {
+      modalTitle.innerText = 'Artworks from this department are currently unavailable.';
+      modalImageContainer.innerHTML = `<img src="/sunflowers.jpg" alt="Default Sunflowers" style="max-width: 100%; max-height: 50vh; border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">`;
+      modalDepartment.innerText = "Please enjoy Van Gogh's classic Sunflowers instead!";
+    }
+  } catch (error) {
+    console.error(error);
+    modalImageContainer.innerHTML = '<p>Error loading artwork from the API.</p>';
+  }
 }

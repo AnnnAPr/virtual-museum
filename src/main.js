@@ -66,7 +66,10 @@ async function renderGallery(query = '') {
     <h2 class="section-title">The Art Gallery</h2>
     
     <div class="search-container">
-      <input type="text" id="search-input" placeholder="Search for art (e.g. cats, gold, sunflowers)..." value="${safeQuery}">
+      <div class="search-input-wrapper">
+        <input type="text" id="search-input" placeholder="Search for art (e.g. cats, gold, sunflowers)..." value="${safeQuery}">
+        <button id="clear-input" class="clear-btn" title="Clear search">&times;</button>
+      </div>
       <button id="search-button">Search</button>
     </div>
     <div id="status-container" style="text-align: center; margin-bottom: 2rem; color: #cbbcdbff;">
@@ -88,6 +91,22 @@ async function renderGallery(query = '') {
       const newQuery = document.getElementById('search-input').value;
       if (newQuery) renderGallery(newQuery);
     }
+  });
+
+  const searchInput = document.getElementById('search-input');
+  const clearBtn = document.getElementById('clear-input');
+
+  clearBtn.style.display = searchInput.value ? 'block' : 'none';
+
+  searchInput.addEventListener('input', () => {
+    clearBtn.style.display = searchInput.value ? 'block' : 'none';
+  });
+
+  clearBtn.addEventListener('click', () => {
+    searchInput.value = '';
+    clearBtn.style.display = 'none';
+    searchInput.focus();
+    renderGallery('');
   });
 
   const artworkGrid = document.getElementById('artwork-grid');

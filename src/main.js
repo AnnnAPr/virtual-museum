@@ -52,12 +52,21 @@ function renderHome() {
   `;
 }
 
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
 async function renderGallery(query = '') {
+  const safeQuery = escapeHtml(query);
   mainContent.innerHTML = `
     <h2 class="section-title">The Art Gallery</h2>
     
     <div class="search-container">
-      <input type="text" id="search-input" placeholder="Search for art (e.g. cats, gold, sunflowers)..." value="${query}">
+      <input type="text" id="search-input" placeholder="Search for art (e.g. cats, gold, sunflowers)..." value="${safeQuery}">
       <button id="search-button">Search</button>
     </div>
     <div id="status-container" style="text-align: center; margin-bottom: 2rem; color: #cbbcdbff;">
@@ -89,15 +98,21 @@ async function renderGallery(query = '') {
     return;
   }
 
-  statusContainer.innerHTML = `Searching for "${query}"...`;
+  statusContainer.innerHTML = `Searching for "${safeQuery}"...`;
 
   try {
-    const searchRes = await fetch(`${endpoint1_search}?hasImages=true&q=${query}`);
+    const searchRes = await fetch(
+      `${endpoint1_search}?hasImages=true&q=${encodeURIComponent(query)}`
+    );
+    if (!searchRes.ok) {
+      throw new Error(`Search request failed with status ${searchRes.status}`);
+    }
     const searchData = await searchRes.json();
     console.log('searchData: ', searchData);
 
     if (!searchData.objectIDs || searchData.objectIDs.length === 0) {
-      artworkGrid.innerHTML = `<p class="status-msg">No results found for "${query}".</p>`;
+      statusContainer.innerHTML = '';
+      artworkGrid.innerHTML = `<p class="status-msg">No results found for "${safeQuery}".</p>`;
       return;
     }
 
@@ -106,14 +121,18 @@ async function renderGallery(query = '') {
     const TARGET_COUNT = 12;
     let validCount = 0;
 
-    // retrieve by small 4 batches
+    // retrieve by small 4 batches; use allSettled so one bad ID never aborts the whole batch
     for (let i = 0; i < searchData.objectIDs.length && validCount < TARGET_COUNT; i += 4) {
       const batchIds = searchData.objectIDs.slice(i, i + 4);
       const requests = batchIds.map((id) =>
-        fetch(`${endpoint2_objects}/${id}`).then((res) => res.json())
+        fetch(`${endpoint2_objects}/${id}`).then((res) => {
+          if (!res.ok) throw new Error(`Object ${id} responded with ${res.status}`);
+          return res.json();
+        })
       );
 
-      const artResults = await Promise.all(requests);
+      const settled = await Promise.allSettled(requests);
+      const artResults = settled.filter((r) => r.status === 'fulfilled').map((r) => r.value);
       console.log('artResults: ', artResults);
 
       for (const art of artResults) {
@@ -124,12 +143,12 @@ async function renderGallery(query = '') {
           card.className = 'art-card';
           card.innerHTML = `
             <div class="art-image">
-              <img src="${art.primaryImageSmall}" alt="${art.title}" loading="lazy">
+              <img src="${escapeHtml(art.primaryImageSmall)}" alt="${escapeHtml(art.title)}" loading="lazy">
             </div>
             <div class="art-info">
-              <h3>${art.title}</h3>
-              <p>${art.artistDisplayName}</p>
-              <p class="art-date">${art.objectDate}</p>
+              <h3>${escapeHtml(art.title)}</h3>
+              <p>${escapeHtml(art.artistDisplayName)}</p>
+              <p class="art-date">${escapeHtml(art.objectDate)}</p>
             </div>
           `;
           artworkGrid.appendChild(card);
@@ -139,7 +158,7 @@ async function renderGallery(query = '') {
     }
 
     if (validCount === 0) {
-      statusContainer.innerHTML = `No images found for "${query}".`;
+      statusContainer.innerHTML = `No images found for "${safeQuery}".`;
     } else {
       statusContainer.innerHTML = '';
     }
@@ -200,7 +219,7 @@ async function renderDeprtments() {
       const card = document.createElement('div');
       card.className = 'art-card department-card';
 
-      card.innerHTML = `<h3 style="margin:0;">${dept.displayName}</h3>`;
+      card.innerHTML = `<h3 style="margin:0;">${escapeHtml(dept.displayName)}</h3>`;
 
       card.addEventListener('click', () => {
         openRandomArtModal(dept.departmentId, dept.displayName);
@@ -244,7 +263,7 @@ async function openRandomArtModal(departmentId, departmentName) {
 
     if (artData && artData.primaryImageSmall) {
       modalTitle.innerText = artData.title;
-      modalImageContainer.innerHTML = `<img src="${artData.primaryImageSmall}" alt="${artData.title}" style="max-width: 100%; max-height: 50vh; border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">`;
+      modalImageContainer.innerHTML = `<img src="${escapeHtml(artData.primaryImageSmall)}" alt="${escapeHtml(artData.title)}" style="max-width: 100%; max-height: 50vh; border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">`;
 
       const artistText = artData.artistDisplayName
         ? `By: ${artData.artistDisplayName}`

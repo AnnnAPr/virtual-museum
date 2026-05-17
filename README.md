@@ -51,6 +51,20 @@ It can also be run manually:
 - **Check for code errors:** `npm run lint`
 - **Auto-format code files:** `npm run format`
 
+## Testing
+
+This project uses **Vitest** and **jsdom** to test routing logic and DOM manipulations.
+
+To run the test suite in watch mode (ideal for development):
+```bash
+npm run test
+```
+
+To run the test suite a single time without watch mode:
+```bash
+npm run test -- --run
+```
+
 ## Features
 - **Gallery Search:** Search the entire Met catalog with smart pagination that automatically handles missing images and API limits.
 - **Departments Exploration:** Browse art categorized by museum departments.

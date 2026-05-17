@@ -1,5 +1,5 @@
-import js from "@eslint/js";
-import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
+import js from '@eslint/js';
+import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 
 export default [
   js.configs.recommended,
@@ -7,17 +7,18 @@ export default [
   {
     languageOptions: {
       ecmaVersion: 2022,
-      sourceType: "module",
+      sourceType: 'module',
       globals: {
-        document: "readonly",
-        window: "readonly",
-        console: "readonly",
-        fetch: "readonly",
-        Promise: "readonly"
-      }
+        document: 'readonly',
+        window: 'readonly',
+        console: 'readonly',
+        fetch: 'readonly',
+        Promise: 'readonly',
+        Event: 'readonly',
+      },
     },
     rules: {
-      "no-unused-vars": "warn"
-    }
-  }
+      'no-unused-vars': 'warn',
+    },
+  },
 ];

@@ -2,6 +2,10 @@
 
 An interactive web application that allows users to explore the collection of the Metropolitan Museum of Art using their [Metropolitan Museum of Art Collection API](https://metmuseum.github.io/). The application is built using vanilla JavaScript and uses Vite as a development server.
 
+### 🚀 Live Demo
+
+Deployed website here: **[Virtual Museum Live Link](https://virtual-met-museum.vercel.app/)**
+
 ## Prerequisites
 
 Before you begin, ensure you have the following installed on your machine:

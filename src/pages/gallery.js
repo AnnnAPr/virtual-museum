@@ -98,6 +98,8 @@ export async function renderGallery(query = '', page = 0) {
     const totalNeeded = (page + 1) * ITEMS_PER_PAGE;
 
     let checkedThisRound = 0;
+
+    //Safety limit to prevent infinite loop if many objects lack images
     const MAX_CHECKS = 40;
 
     while (
@@ -105,13 +107,18 @@ export async function renderGallery(query = '', page = 0) {
       lastCheckedIndex < currentSearchIDs.length &&
       checkedThisRound < MAX_CHECKS
     ) {
+      // Fetch objects in batches of 4 for better performance(respect API rate)
       const batchIds = currentSearchIDs.slice(lastCheckedIndex, lastCheckedIndex + 4);
       lastCheckedIndex += 4;
       checkedThisRound += 4;
 
       const requests = batchIds.map((id) => fetchObject(id));
+
+      // Use allSettled to continue even if some requests fail
       const settled = await Promise.allSettled(requests);
       const artResults = settled.filter((r) => r.status === 'fulfilled').map((r) => r.value);
+
+      //Filter out items without images and add to cache
       for (const art of artResults) {
         if (art.primaryImageSmall) {
           validArtworksCache.push(art);

@@ -73,6 +73,7 @@ async function openRandomArtModal(departmentId, departmentName) {
     let artData = null;
 
     if (searchData.objectIDs && searchData.objectIDs.length > 0) {
+      // Select a random artwork from the department search results
       const randomIndex = Math.floor(Math.random() * searchData.objectIDs.length);
       const randomId = searchData.objectIDs[randomIndex];
       artData = await fetchObject(randomId);
@@ -86,6 +87,7 @@ async function openRandomArtModal(departmentId, departmentName) {
         : 'Unknown Artist';
       modalDepartment.innerText = artistText;
     } else {
+      // Display a default image if no artwork is found
       modalTitle.innerText = 'Artworks from this department are currently unavailable.';
       modalImageContainer.innerHTML = `<img src="/sunflowers.jpg" alt="Default Sunflowers" class="modal-img">`;
       modalDepartment.innerText = "Please enjoy Van Gogh's classic Sunflowers instead!";
